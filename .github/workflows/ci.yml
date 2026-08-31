@@ -13,6 +13,8 @@ env:
 jobs:
   build-Linux64:
     runs-on: ubuntu-latest
+    env:
+      EARTHLY_FLAGS: --GIT_REF_NAME="${{ github.ref_name }}" --GIT_SHA="${{ github.sha }}" ${{ github.repository_owner == 'andyli' && github.event_name == 'push' && '--push' || '' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -27,15 +29,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build devcontainer
-        run: earthly +ci-devcontainer --GIT_REF_NAME="${{ github.ref_name }}" --GIT_SHA="${{ github.sha }}"
-        env:
-          EARTHLY_PUSH: "${{ github.repository_owner == 'andyli' && github.event_name == 'push' }}"
+        run: earthly +ci-devcontainer ${{ env.EARTHLY_FLAGS }}
       - name: Build
         run: earthly --artifact +build/aws.ndll bin/aws.ndll
       - name: Package
-        run: earthly +ci-package-zip --GIT_REF_NAME="${{ github.ref_name }}" --GIT_SHA="${{ github.sha }}"
-        env:
-          EARTHLY_PUSH: "${{ github.repository_owner == 'andyli' && github.event_name == 'push' }}"
+        run: earthly +ci-package-zip ${{ env.EARTHLY_FLAGS }}
       - uses: actions/upload-artifact@v7
         with:
           name: ndll-Linux64
